@@ -1,0 +1,9 @@
+megs: 32
+
+floppya: image="boot.img", status=inserted
+# floppyb: image="b.img", status=inserted
+boot: a
+
+# gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0
+
+# vim:ft=conf:

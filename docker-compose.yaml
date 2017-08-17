@@ -1,0 +1,8 @@
+centos:
+  hostname: centos
+  container_name: centos
+  image: centos
+  working_dir: /code
+  tty: true
+  volumes:
+    - ".:/code"
