@@ -1,25 +1,23 @@
-all: boot.img hiber.sys
+SUBDIRS := $(wildcard */)
 
-hiber.sys: hiber.asm
-	nasm $< -o $@
+all: boot.img $(SUBDIRS)
 
-boot.bin: boot.asm
-	nasm $< -o $@
+.PHONY: all $(SUBDIRS)
 
-boot.img: boot.bin loader/loader.bin
+$(SUBDIRS):
+	make -C $@
+
+boot.img:
 	dd if=/dev/zero of=boot.img bs=1024 count=1440
-	dd if=$< of=$@ conv=notrunc
-	mcopy -i $@ loader/loader.bin ::/
 
 clean:
-	rm hiber.sys boot.bin boot.img
+	rm -f boot.img
+	make -C $(SUBDIRS) clean
 
 run: boot.img
 	qemu-system-i386 -s -boot order=a -drive file=boot.img,index=0,if=floppy,format=raw
 
 gdb: boot.img
+	pkill -f qemu-system-i386 || true
 	qemu-system-i386 -S -s -boot order=a -drive file=boot.img,index=0,if=floppy,format=raw &
 	sudo gdb
-
-kill:
-	pkill -f qemu-system-i386
