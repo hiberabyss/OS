@@ -1,7 +1,12 @@
 CYLS equ 10
 SECTIONS equ 18
 MAX_RETRY equ 5
-LOADER_ADDR_SEG equ 0x7e0
+; LOADER_MEM_START ; loaded from nasm
+
+FAT12_BITMAP_MEM_START equ 0xa000
+FAT12_BITMAP_SIZE equ 9
+FAT12_BITMAP_START equ 1
+
 FAT12_ROOT_MEM_SEG equ 0x800
 FAT12_ROOT_TABLE_SIZE equ 9
 
@@ -16,6 +21,8 @@ FAT12_NAME_SIZE equ 11
 
 FAT12_PER_DIR_META_SIZE equ 32
 
+ASM_FUNC equ 0x7d00
+
 ORG     0x7c00          ; 指明程序装载地址
 
 JMP short entry
@@ -28,22 +35,43 @@ entry: ; 0x7c3e
 	MOV     SP, 0x7c00
 	MOV     DS, AX
 	MOV     ES, AX
+	jmp main
 
-mov ax, FAT12_ROOT_MEM_SEG
-mov es, ax
-mov bx, 0
-mov ax, FAT12_ROOT_FIRST_SECT_NUM
-mov si, 14
-call read_sects ; 0x7ca6
+read_one_sect:
+	; input: AX as sect number
+	; ch = N / 36
+	mov dl, 36
+	div dl
+	mov ch, al
 
-call find_loader_sect ; 0x7c6f
-mov bx, 0
-mov es, bx
-mov bx, LOADER_ADDR_SEG
-mov si, 1 ; 0x7c66
-call read_sects
+	; dh = (N % 36) / 18
+	mov al, ah
+	mov ah, 0
+	mov dl, 18
+	div dl
+	mov dh, al
 
-jmp LOADER_ADDR_SEG
+	; cl = (N % 36) % 18 + 1
+	mov cl, ah
+	inc cl
+
+	mov dl, 0
+	mov ah, 2
+	mov al, 1
+
+	mov si, MAX_RETRY
+retry:
+	cmp si, 0
+	je fin
+	dec si
+	int 0x13
+	jc retry
+
+	ret
+
+fin:
+	HLT                     ; 让CPU停止，等待指令
+	JMP     fin             ; 无限循环
 
 find_loader_sect:
 	; ax is the output
@@ -101,48 +129,44 @@ read_sects:
 
 	ret
 
-read_one_sect:
-	; input: AX as sect number
-	; ch = N / 36
-	mov dl, 36
-	div dl
-	mov ch, al
-
-	; dh = (N % 36) / 18
-	mov al, ah
-	mov ah, 0
-	mov dl, 18
-	div dl
-	mov dh, al
-
-	; cl = (N % 36) % 18 + 1
-	mov cl, ah
-	inc cl
-
-	mov dl, 0
-	mov ah, 2
-	mov al, 1
-
-	mov si, MAX_RETRY
-retry:
-	cmp si, 0
-	je fin
-	dec si
-	int 0x13
-	jc retry
-
+print_char:
+	mov al, [esp+1]
+	mov ah, 0xe
+	mov bx, 15
+	int 0x10
 	ret
 
 loader_name db "LOADER  BIN"
 
-fin:
-	HLT                     ; 让CPU停止，等待指令
-	JMP     fin             ; 无限循环
+main:
+	; read all root meta, 14 sects
+	mov ax, FAT12_ROOT_MEM_SEG
+	mov es, ax
+	mov bx, 0
+	mov ax, FAT12_ROOT_FIRST_SECT_NUM
+	mov si, 14
+	call read_sects ; 0x7ca6
 
-msg:
-	DB      0x0a, 0x0a      ; 换行两次
-	DB      "hello, myos"
-	DB      0
+	; read all fat bitmap, 9 sects
+	mov bx, 0
+	mov es, bx
+	mov bx, FAT12_BITMAP_MEM_START
+	mov ax, FAT12_BITMAP_START
+	mov si, FAT12_BITMAP_SIZE
+	call read_sects
+
+	call find_loader_sect ; 0x7c6f
+	mov bx, 0
+	mov es, bx
+	mov bx, LOADER_MEM_START
+	call read_one_sect
+
+	; save function address
+	; lea ax, fin
+	mov word [ASM_FUNC], fin
+	mov word [ASM_FUNC + 2], print_char
+
+	jmp LOADER_MEM_START
 
 	times 510 - ($ - $$) db 0
 
