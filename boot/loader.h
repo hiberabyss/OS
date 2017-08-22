@@ -1,3 +1,6 @@
+#ifndef LOADER_H
+#define LOADER_H
+
 #define FAT12_SECTOR_SIZE 512
 #define FAT12_FIRST_CLUSTER_IDX 2
 #define FAT12_FIRST_DATA_CLUSTER 33
@@ -12,11 +15,20 @@
 #define FAT12_ROOT_MEM_ADDR_START (char *) 0x8000
 #define FAT12_ROOT_MEM_ADDR_END (char *) (0x8000 + 14 * 512)
 
-#define ASM_FUNCTIONS (void *) 0x7d00
+// typedef void fin();
+#define ASM_FUNCTIONS ((void **)0x7e00)
+#define FIN ((void (*) ()) ASM_FUNCTIONS[0])
+#define PRINT_CHAR ((void (*) (const char)) (ASM_FUNCTIONS[1]))
+
 
 void _start();
-void print_char(const char c);
-void fin();
 void print_string(const char *str);
 char is_name_equal(const char *name1, const char *name2);
+
+// entrypoint
+void _entry() {
+	_start();
+}
+
+#endif /* end of include guard: LOADER_H */
 

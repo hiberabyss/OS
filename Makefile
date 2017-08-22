@@ -6,22 +6,28 @@ KERNEL_BIN = kernel.bin
 
 BOOT_IMG = boot.img
 
+QEMU_FLAGS = -boot order=a -drive file=$(BOOT_IMG),index=0,if=floppy,format=raw 
+
 export
 
-all: boot.img $(SUBDIRS)
+all: $(SUBDIRS)
 
 .PHONY: all $(SUBDIRS)
+
+$(BOOT_IMG): $(SUBDIRS)
 
 $(SUBDIRS):
 	make -C $@
 
-run: boot.img $(SUBDIRS)
-	qemu-system-i386 -s -boot order=a -drive file=$<,index=0,if=floppy,format=raw
+run: $(BOOT_IMG) kill
+	qemu-system-i386 -s $(QEMU_FLAGS)
 
-gdb: boot.img
-	pkill -f qemu-system-i386 || true
-	qemu-system-i386 -S -s -boot order=a -drive file=boot.img,index=0,if=floppy,format=raw &
+gdb: $(BOOT_IMG) kill
+	qemu-system-i386 -S -s $(QEMU_FLAGS) &
 	sudo gdb
+
+kill:
+	pkill -f qemu-system-i386 || true
 
 clean:
 	rm -f boot.img

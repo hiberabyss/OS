@@ -21,7 +21,7 @@ FAT12_NAME_SIZE equ 11
 
 FAT12_PER_DIR_META_SIZE equ 32
 
-ASM_FUNC equ 0x7d00
+ASM_FUNC equ 0x7e00
 
 ORG     0x7c00          ; 指明程序装载地址
 
@@ -130,7 +130,7 @@ read_sects:
 	ret
 
 print_char:
-	mov al, [esp+1]
+	mov eax, [esp+4]
 	mov ah, 0xe
 	mov bx, 15
 	int 0x10
@@ -164,7 +164,7 @@ main:
 	; save function address
 	; lea ax, fin
 	mov word [ASM_FUNC], fin
-	mov word [ASM_FUNC + 2], print_char
+	mov word [ASM_FUNC + 4], print_char ; 0x7d12
 
 	jmp LOADER_MEM_START
 
