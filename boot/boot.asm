@@ -73,11 +73,18 @@ fin:
 	HLT                     ; 让CPU停止，等待指令
 	JMP     fin             ; 无限循环
 
-find_loader_sect:
+find_loader_sect: ; 0x7c79
 	; ax is the output
+	xor ebx, ebx
 	mov bx, FAT12_ROOT_MEM_ADDR_START
+	xor ecx, ecx
+	mov cx, loader_name
 next_file_item:
-	call is_loader
+	push ebx
+	push ecx
+	mov ecx, is_loader
+	call ecx ; is_loader
+	add sp, 8
 	cmp al, 1
 	je get_sector_num
 	add bx, FAT12_PER_DIR_META_SIZE
@@ -93,13 +100,18 @@ get_sector_num:
 is_loader:
 	; [bx] is the dir item
 	; al is the result
+	mov ebx, [esp+8]
+	mov edx, [esp+4]
+	pop esi
+	push si
+	xor esi, esi
 	mov si, 0 ; FAT12_NAME_SIZE
 	mov al, 1
 
 per_char_cmp:
-	mov ch, [loader_name + si]
+	mov ch, [edx + esi]
 	mov cl, [bx + si]
-	cmp ch, cl ; msg[si], bx[si]
+	cmp ch, cl
 	jne not_equal
 
 	inc si
@@ -108,7 +120,7 @@ per_char_cmp:
 	ret
 
 not_equal:
-	mov al, 0
+	mov eax, 0
 	ret
 
 read_sects:
@@ -131,6 +143,8 @@ read_sects:
 
 print_char:
 	mov eax, [esp+4]
+	pop esi
+	push si
 	mov ah, 0xe
 	mov bx, 15
 	int 0x10
@@ -165,6 +179,7 @@ main:
 	; lea ax, fin
 	mov word [ASM_FUNC], fin
 	mov word [ASM_FUNC + 4], print_char ; 0x7d12
+	mov word [ASM_FUNC + 8], is_loader ; 0x7d12
 
 	jmp LOADER_MEM_START
 

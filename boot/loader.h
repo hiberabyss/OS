@@ -19,11 +19,11 @@
 #define ASM_FUNCTIONS ((void **)0x7e00)
 #define FIN ((void (*) ()) ASM_FUNCTIONS[0])
 #define PRINT_CHAR ((void (*) (const char)) (ASM_FUNCTIONS[1]))
+#define IS_NAME_EQUAL ((char (*) (const char *, const char *)) (ASM_FUNCTIONS[2]))
 
 
 void _start();
 void print_string(const char *str);
-char is_name_equal(const char *name1, const char *name2);
 
 // entrypoint
 void _entry() {
