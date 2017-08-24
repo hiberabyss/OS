@@ -10,7 +10,7 @@ all: boot.bin $(LOADER_BIN)
 C_SOURCES = $(wildcard *.c)
 C_OBJECTS = $(C_SOURCES:.c=.o)
 
-loader.o: loader.c loader.h
+loader.o: loader.c ./loader.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BOOT_IMG):

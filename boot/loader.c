@@ -1,5 +1,17 @@
 #include "loader.h"
 
+void _start() {
+	const char *kernel_name = "KERNEL  BIN";
+	print_string(kernel_name);
+	for (char *p = FAT12_ROOT_MEM_ADDR_START; p < FAT12_ROOT_MEM_ADDR_END; p += 32) {
+		if (is_name_equal(p, kernel_name)) {
+			print_string(p);
+		}
+	}
+
+	FIN();
+}
+
 void print_string(const char *str) {
 	while(*str) {
 		char ch = *str;
@@ -16,16 +28,4 @@ char is_name_equal(const char *name1, const char *name2) {
 		}
 	}
 	return res;
-}
-
-void _start() {
-	const char *kernel_name = "KERNEL  BIN";
-	print_string(kernel_name);
-	for (char *p = FAT12_ROOT_MEM_ADDR_START; p < FAT12_ROOT_MEM_ADDR_END; p += 32) {
-		if (is_name_equal(p, kernel_name)) {
-			print_string(p);
-		}
-	}
-
-	FIN();
 }
