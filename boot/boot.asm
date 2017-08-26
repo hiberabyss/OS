@@ -73,17 +73,16 @@ fin:
 	HLT                     ; 让CPU停止，等待指令
 	JMP     fin             ; 无限循环
 
-find_loader_sect: ; 0x7c79
+find_file_sec_idx: ; 0x7c79
+	; short int find_file_sect_idx(const char *)
 	; ax is the output
+	mov cx, [esp+4]
 	xor ebx, ebx
 	mov bx, FAT12_ROOT_MEM_ADDR_START
-	xor ecx, ecx
-	mov cx, loader_name
 next_file_item:
 	push ebx
 	push ecx
-	mov ecx, is_loader
-	call ecx ; is_loader
+	call 0:is_filename_equal
 	add sp, 8
 	cmp al, 1
 	je get_sector_num
@@ -94,34 +93,31 @@ next_file_item:
 
 get_sector_num:
 	mov ax, [bx + 0x1a]
-	add ax, 31
-	ret
+	ret 2
 
-is_loader:
-	; [bx] is the dir item
+is_filename_equal:
+	; bool is_name_equal(const char *, const char *)
 	; al is the result
 	mov ebx, [esp+8]
 	mov edx, [esp+4]
-	pop esi
-	push si
 	xor esi, esi
 	mov si, 0 ; FAT12_NAME_SIZE
 	mov al, 1
 
 per_char_cmp:
+	mov cl, [ebx + esi]
 	mov ch, [edx + esi]
-	mov cl, [bx + si]
 	cmp ch, cl
 	jne not_equal
 
 	inc si
 	cmp si, FAT12_NAME_SIZE
 	jne per_char_cmp
-	ret
+	ret 2
 
 not_equal:
 	mov eax, 0
-	ret
+	ret 2
 
 read_sects:
 	; es:bx as target mem addr
@@ -142,13 +138,12 @@ read_sects:
 	ret
 
 print_char:
+	; void print_char(const char)
 	mov eax, [esp+4]
-	pop esi
-	push si
 	mov ah, 0xe
 	mov bx, 15
 	int 0x10
-	ret
+	ret 2
 
 loader_name db "LOADER  BIN"
 
@@ -169,7 +164,10 @@ main:
 	mov si, FAT12_BITMAP_SIZE
 	call read_sects
 
-	call find_loader_sect ; 0x7c6f
+	push dword loader_name
+	call 0:find_file_sec_idx ; 0x7c6f
+	add sp, 4
+	add ax, 31
 	mov bx, 0
 	mov es, bx
 	mov bx, LOADER_MEM_START
@@ -179,7 +177,8 @@ main:
 	; lea ax, fin
 	mov word [ASM_FUNC], fin
 	mov word [ASM_FUNC + 4], print_char ; 0x7d12
-	mov word [ASM_FUNC + 8], is_loader ; 0x7d12
+	mov word [ASM_FUNC + 8], is_filename_equal ; 0x7d12
+	mov word [ASM_FUNC + 12], find_file_sec_idx
 
 	jmp LOADER_MEM_START
 

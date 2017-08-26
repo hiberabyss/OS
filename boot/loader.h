@@ -20,7 +20,7 @@
 #define FIN ((void (*) ()) ASM_FUNCTIONS[0])
 #define PRINT_CHAR ((void (*) (const char)) (ASM_FUNCTIONS[1]))
 #define IS_NAME_EQUAL ((char (*) (const char *, const char *)) (ASM_FUNCTIONS[2]))
-
+#define FIND_FILE_SEC_IDX ((short (*) (const char *)) (ASM_FUNCTIONS[3]))
 
 void _start();
 void print_string(const char *str);
@@ -28,6 +28,7 @@ void print_string(const char *str);
 // entrypoint
 void _entry() {
 	_start();
+	FIN();
 }
 
 #endif /* end of include guard: LOADER_H */
