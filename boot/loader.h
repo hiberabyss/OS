@@ -44,11 +44,5 @@ void print_string(const char *str);
 uint16 find_next_sect_idx(uint16 sect_idx);
 void init();
 
-// entrypoint
-void _entry() {
-	_start();
-	// FIN();
-}
-
 #endif /* end of include guard: LOADER_H */
 

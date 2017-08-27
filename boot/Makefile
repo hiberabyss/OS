@@ -13,6 +13,9 @@ C_OBJECTS = $(C_SOURCES:.c=.o)
 loader.o: loader.c ./loader.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+entry.o: ./entry.c ./loader.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(BOOT_IMG):
 	dd if=/dev/zero of=$@ bs=1024 count=1440
 
