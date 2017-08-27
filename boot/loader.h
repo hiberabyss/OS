@@ -1,7 +1,6 @@
 #ifndef LOADER_H
 #define LOADER_H
 
-
 #define LOADER_MEM_START ((char *)0xc000)
 
 #define FAT12_BITMAP_MAX 0xff8
@@ -45,4 +44,3 @@ uint16 find_next_sect_idx(uint16 sect_idx);
 void init();
 
 #endif /* end of include guard: LOADER_H */
-

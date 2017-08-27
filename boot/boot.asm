@@ -155,6 +155,17 @@ print_char:
 	int 0x10
 	ret 2
 
+io_restore_eflags:
+	mov eax, [esp+4]
+	push eax
+	popfd
+	ret 2
+
+io_save_eflags:
+	pushfd
+	pop eax
+	ret 2
+
 enter_vga_mode:
 	mov al, 0x13
 	mov ah, 0
@@ -199,6 +210,10 @@ main:
 	mov word [ASM_FUNC + 12], find_file_sec_idx
 	mov word [ASM_FUNC + 16], read_one_sect
 	mov word [ASM_FUNC + 20], enter_vga_mode
+
+	; io functions
+	mov word [ASM_FUNC + 24], io_save_eflags
+	mov word [ASM_FUNC + 28], io_restore_eflags
 
 	jmp LOADER_MEM_START
 

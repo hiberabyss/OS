@@ -1,4 +1,5 @@
 #include "loader.h"
+#include "graphic.h"
 
 void print_string(const char *str) {
 	while(*str) {
@@ -10,9 +11,9 @@ void print_string(const char *str) {
 
 void init() {
 	ENTER_VGA_MODE();
-	for (char *p = VGA_MEM_START; p < VGA_MEM_END; ++p) {
-		*p = (int)p & 0x0f;
-	}
+	init_palette();
+
+	init_screen();
 }
 
 // vim:nowrap:
