@@ -22,6 +22,7 @@ FAT12_NAME_SIZE equ 11
 FAT12_PER_DIR_META_SIZE equ 32
 
 ASM_FUNC equ 0x7e00
+ASM_VARIABLE equ 0x7f00
 
 ORG     0x7c00          ; 指明程序装载地址
 
@@ -38,7 +39,11 @@ entry: ; 0x7c3e
 	jmp main
 
 read_one_sect:
+	; void read_one_sect(short int sect_idx, char *buf)
 	; input: AX as sect number
+	mov eax, [esp+4]
+	mov es, [esp+8]
+	mov ebx, [esp+12]
 	; ch = N / 36
 	mov dl, 36
 	div dl
@@ -67,7 +72,7 @@ retry:
 	int 0x13
 	jc retry
 
-	ret
+	ret 2
 
 fin:
 	HLT                     ; 让CPU停止，等待指令
@@ -123,11 +128,16 @@ read_sects:
 	; es:bx as target mem addr
 	; si number of sects to be read
 	; mov si, FAT12_ROOT_TABLE_SIZE
-	push ax
 	push si
-	call read_one_sect
-	pop si
+	push ax
+	push ebx
+	mov bx, es
+	push ebx
+	push eax
+	call 0:read_one_sect
+	add esp, 12
 	pop ax
+	pop si
 
 	inc ax
 	add bx, 0x200
@@ -142,6 +152,12 @@ print_char:
 	mov eax, [esp+4]
 	mov ah, 0xe
 	mov bx, 15
+	int 0x10
+	ret 2
+
+enter_vga_mode:
+	mov al, 0x13
+	mov ah, 0
 	int 0x10
 	ret 2
 
@@ -167,11 +183,13 @@ main:
 	push dword loader_name
 	call 0:find_file_sec_idx ; 0x7c6f
 	add sp, 4
+	mov [ASM_VARIABLE], ax
 	add ax, 31
-	mov bx, 0
-	mov es, bx
-	mov bx, LOADER_MEM_START
-	call read_one_sect
+	push dword LOADER_MEM_START
+	push dword 0
+	push eax
+	call 0:read_one_sect
+	add sp, 6
 
 	; save function address
 	; lea ax, fin
@@ -179,6 +197,8 @@ main:
 	mov word [ASM_FUNC + 4], print_char ; 0x7d12
 	mov word [ASM_FUNC + 8], is_filename_equal ; 0x7d12
 	mov word [ASM_FUNC + 12], find_file_sec_idx
+	mov word [ASM_FUNC + 16], read_one_sect
+	mov word [ASM_FUNC + 20], enter_vga_mode
 
 	jmp LOADER_MEM_START
 
