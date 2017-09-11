@@ -7,6 +7,7 @@ void init_palette(void);
 void set_palette(int start, int end, unsigned char *rgb);
 void boxfill(unsigned char color, int x0, int y0, int x1, int y1);
 void init_screen();
+void init_graphic();
 extern char _binary_hankaku_bin_start[4096];
 
 #define XSIZE 320

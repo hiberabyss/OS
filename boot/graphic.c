@@ -1,6 +1,6 @@
 #include "io.h"
 #include "graphic.h"
-
+#include <stdio.h>
 
 void init_palette(void) {
 	static unsigned char table_rgb[16 * 3] = {
@@ -51,21 +51,26 @@ void boxfill(unsigned char color, int x0, int y0, int x1, int y1) {
 	return;
 }
 
-void putfont8(int x, int y, char c, char *font)
-{
+void putfont8(int x, int y, char c, char *font) {
 	for (int i = 0; i < 16; i++) {
 		char *p = VGA_MEM_START + (y + i) * XSIZE + x;
-		char d = font[i];
-		if ((d & 0x80) != 0) { p[0] = c; }
-		if ((d & 0x40) != 0) { p[1] = c; }
-		if ((d & 0x20) != 0) { p[2] = c; }
-		if ((d & 0x10) != 0) { p[3] = c; }
-		if ((d & 0x08) != 0) { p[4] = c; }
-		if ((d & 0x04) != 0) { p[5] = c; }
-		if ((d & 0x02) != 0) { p[6] = c; }
-		if ((d & 0x01) != 0) { p[7] = c; }
+		unsigned char d = font[i];
+		/* unsigned char ch = ((d & 0x0f) << 4) + ((d & 0xf0) >> 4); */
+		for (int j = 0; j < 8; ++j) {
+			if ( (d & (1 << j)) ) {
+				p[7-j] = c;
+			}
+		}
 	}
 	return;
+}
+
+void put_string(int x, int y, char color, char *str) {
+	while (*str) {
+		putfont8(x, y, color, _binary_hankaku_bin_start + (*str) * 16);
+		x += 8;
+		str++;
+	}
 }
 
 void init_screen() {
@@ -88,5 +93,67 @@ void init_screen() {
 	boxfill(COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
 	boxfill(COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
 
-	putfont8(8, 8, COL8_FFFFFF, _binary_hankaku_bin_start + 'A' * 16);
+	/* sprintf(buf, "screen: %d", 320); */
+	put_string(8, 8, COL8_FFFFFF, "ABC, 123!");
+}
+
+void init_mouse_cursor8(char *mouse, char bc) {
+	static char cursor[16][16] = {
+		"**************..",
+		"*OOOOOOOOOOO*...",
+		"*OOOOOOOOOO*....",
+		"*OOOOOOOOO*.....",
+		"*OOOOOOOO*......",
+		"*OOOOOOO*.......",
+		"*OOOOOOO*.......",
+		"*OOOOOOOO*......",
+		"*OOOO**OOO*.....",
+		"*OOO*..*OOO*....",
+		"*OO*....*OOO*...",
+		"*O*......*OOO*..",
+		"**........*OOO*.",
+		"*..........*OOO*",
+		"............*OO*",
+		".............***"
+	};
+	int x, y;
+
+	for (y = 0; y < 16; y++) {
+		for (x = 0; x < 16; x++) {
+			if (cursor[y][x] == '*') {
+				mouse[y * 16 + x] = COL8_000000;
+			}
+			if (cursor[y][x] == 'O') {
+				mouse[y * 16 + x] = COL8_FFFFFF;
+			}
+			if (cursor[y][x] == '.') {
+				mouse[y * 16 + x] = bc;
+			}
+		}
+	}
+	return;
+}
+
+void putblock8_8(int pxsize,
+	int pysize, int px0, int py0, char *buf, int bxsize) {
+	int x, y;
+	for (y = 0; y < pysize; y++) {
+		for (x = 0; x < pxsize; x++) {
+			VGA_MEM_START[(py0 + y) * XSIZE + (px0 + x)] = buf[y * bxsize + x];
+		}
+	}
+	return;
+}
+
+void init_mouse() {
+	char mcursor[256];
+	int mx = (XSIZE - 16) / 2;
+	int my = (YSIZE - 28 - 16) / 2;
+	init_mouse_cursor8(mcursor, COL8_008484);
+	putblock8_8(16, 16, mx, my, mcursor, 16);
+}
+
+void init_graphic() {
+	init_screen();
+	init_mouse();
 }

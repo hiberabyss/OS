@@ -3,7 +3,6 @@
 // entrypoint
 void _entry() {
 	_start();
-	// FIN();
 }
 
 uint16 find_next_sect_idx(uint16 sect_idx) {

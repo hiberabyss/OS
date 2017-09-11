@@ -13,7 +13,7 @@ void init() {
 	ENTER_VGA_MODE();
 	init_palette();
 
-	init_screen();
+	init_graphic();
 }
 
 // vim:nowrap:
